@@ -1,0 +1,11 @@
+{
+  "apiVersion": 1,
+  "id": "eidos.dashboard",
+  "name": "Dashboard",
+  "version": "0.1.0",
+  "requires": { "pluginApi": "3.2.0" },
+  "workspace": { "files": { "read": true } },
+  "views": [{ "id": "main", "title": "Dashboard", "kind": "file", "entry": "./src/main.ts", "access": "write", "capabilities": ["document"] }],
+  "placements": [{ "location": "file/open", "view": "main", "extensions": [".dashboard"] }],
+  "fileTemplates": [{ "id": "blank", "title": "Dashboard", "extension": ".dashboard", "view": "main", "content": "{\n  \"kind\": \"eidos-dashboard\",\n  \"version\": 1,\n  \"title\": \"Dashboard\",\n  \"columns\": 12,\n  \"panels\": []\n}\n" }]
+}

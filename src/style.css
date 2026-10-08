@@ -1,0 +1,445 @@
+:root {
+  color-scheme: var(--eidos-color-scheme, light);
+  font: 13px/1.45 var(--eidos-font-family, system-ui);
+  color: var(--eidos-foreground, #222);
+  background: var(--eidos-background, #fff);
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  min-height: 0;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+}
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--eidos-border, #ddd);
+  border-radius: 4px;
+  padding: 5px 8px;
+}
+button {
+  cursor: pointer;
+}
+button:hover {
+  background: var(--eidos-surface-hover, #f3f3f3);
+}
+:focus-visible {
+  outline: 2px solid var(--eidos-accent, #3977cc);
+  outline-offset: 2px;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--eidos-border, #ddd);
+  flex: none;
+}
+.toolbar button {
+  height: 28px;
+  border-color: transparent;
+  padding: 3px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.toolbar .icon-button {
+  width: 28px;
+  padding: 6px;
+  color: var(--eidos-muted, #777);
+}
+.icon-button svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+.editing .edit-layout {
+  background: var(--eidos-foreground, #222);
+  color: var(--eidos-background, #fff);
+  margin-left: 6px;
+  padding-inline: 12px;
+}
+#save {
+  color: var(--eidos-muted, #777);
+}
+[role="status"]:empty {
+  display: none;
+}
+.title {
+  font-weight: 600;
+  border-color: transparent;
+  min-width: 120px;
+  flex: 1;
+}
+[role="status"] {
+  color: var(--eidos-muted, #777);
+  font-size: 12px;
+}
+.canvas {
+  overflow: auto;
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+}
+.editing .canvas {
+  padding-bottom: max(160px, 25vh);
+}
+.editing .panel {
+  user-select: none;
+}
+.editing .panel-title {
+  user-select: text;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: 68px;
+  gap: 12px;
+}
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--eidos-border, #ddd);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.panel-header {
+  display: flex;
+  flex: none;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 8px;
+}
+.panel-title {
+  min-width: 35px;
+  width: 100%;
+  flex: 1;
+  border-color: transparent;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+.panel-title[readonly] {
+  cursor: default;
+}
+.panel-more {
+  border: 0;
+  opacity: 0;
+  min-width: 28px;
+}
+.panel:hover .panel-more,
+.panel:focus-within .panel-more {
+  opacity: 1;
+}
+.panel-actions {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: 168px;
+  padding: 4px;
+  border: 1px solid var(--eidos-border, #ddd);
+  border-radius: 6px;
+  background: var(--eidos-background, #fff);
+  color: var(--eidos-foreground, #222);
+  box-shadow: 0 4px 16px #00000014;
+}
+.panel-actions:not(:popover-open) {
+  display: none;
+}
+.panel-actions:popover-open {
+  display: flex;
+  flex-direction: column;
+}
+.panel-actions button {
+  border: 0;
+  width: 100%;
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+.panel-actions button:last-child {
+  margin-top: 4px;
+  border-top: 1px solid var(--eidos-border, #ddd);
+  border-radius: 0 0 3px 3px;
+}
+#undo,
+#redo {
+  display: none;
+}
+.editing #undo,
+.editing #redo {
+  display: inline-block;
+}
+@media (hover: none) {
+  .panel-more {
+    opacity: 1;
+  }
+}
+.panel-header button,
+.panel-header select {
+  padding: 2px 4px;
+  font-size: 11px;
+}
+.drag {
+  display: none;
+  cursor: grab;
+  touch-action: none;
+  border: 0;
+}
+.editing .drag {
+  display: inline-block;
+}
+.drag:active {
+  cursor: grabbing;
+}
+.resize {
+  display: none;
+  position: absolute;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  touch-action: none;
+  background: transparent;
+  z-index: 2;
+}
+.editing .resize {
+  display: block;
+}
+.resize:hover {
+  background: transparent;
+}
+.resize-e {
+  right: 0;
+  top: 36px;
+  bottom: 14px;
+  width: 8px;
+  cursor: ew-resize;
+}
+.resize-s {
+  bottom: 0;
+  left: 8px;
+  right: 14px;
+  height: 12px;
+  cursor: ns-resize;
+}
+.resize-s::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 12px);
+  bottom: 3px;
+  width: 24px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--eidos-muted, #777);
+  opacity: 0.45;
+}
+.resize-s:hover::after,
+.resize-s:focus-visible::after {
+  opacity: 1;
+}
+.resize-se {
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+}
+.resize-se::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  border-right: 1px solid var(--eidos-muted, #777);
+  border-bottom: 1px solid var(--eidos-muted, #777);
+}
+.layout-preview {
+  outline: 2px dashed var(--eidos-accent, #3977cc);
+  outline-offset: -2px;
+}
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0 8px 8px 0;
+}
+.panel-body[role="alert"] {
+  padding: 16px;
+}
+.empty {
+  text-align: center;
+  margin: 80px auto;
+  color: var(--eidos-muted, #777);
+}
+.add-panel {
+  padding: 12px 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--eidos-border, #ddd);
+}
+.add-panel label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.add-panel select {
+  max-width: 320px;
+}
+.picker-tools {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.picker-tools input {
+  flex: 1;
+  min-width: 100px;
+  max-width: 560px;
+}
+.add-panel .file-results {
+  width: 100%;
+  align-items: flex-start;
+}
+.add-panel #file {
+  flex: 1;
+  max-width: none;
+  min-width: 0;
+  height: 132px;
+}
+.add-panel #file option {
+  padding: 4px 8px;
+}
+.hint {
+  width: 100%;
+  margin: 0;
+  color: var(--eidos-muted, #777);
+}
+[hidden] {
+  display: none !important;
+}
+.recovery {
+  min-height: 160px;
+  width: 100%;
+}
+@media (max-width: 700px) {
+  .panel {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    min-height: var(--panel-height);
+  }
+  .grid {
+    grid-auto-rows: auto;
+  }
+}
+.editing .panel-body {
+  pointer-events: none;
+}
+.add-panel {
+  position: fixed;
+  inset: auto 16px auto auto;
+  margin: 0;
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100vh - 80px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--eidos-border, #ddd);
+  border-radius: 8px;
+  background: var(--eidos-background, #fff);
+  color: var(--eidos-foreground, #222);
+  box-shadow: 0 8px 24px #00000018;
+}
+.add-panel:not(:popover-open) {
+  display: none;
+}
+.add-panel:popover-open {
+  display: grid;
+  gap: 10px;
+}
+.picker-tools input {
+  width: 0;
+}
+.picker-results {
+  max-height: 240px;
+  min-height: 100px;
+  overflow: auto;
+}
+.picker-results button {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: 0;
+  padding: 5px 8px;
+  text-align: left;
+}
+.picker-results .tree-icon {
+  flex: 0 0 12px;
+  text-align: center;
+  color: var(--eidos-muted, #777);
+}
+.picker-results button[aria-selected="true"] {
+  background: var(--eidos-surface-hover, #f3f3f3);
+}
+.picker-results span,
+.picker-results small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.picker-results small {
+  color: var(--eidos-muted, #777);
+  font-size: 11px;
+}
+.picker-results small:empty {
+  display: none;
+}
+.picker-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--eidos-border, #ddd);
+}
+.picker-footer .hint {
+  flex: 1;
+  width: auto;
+  font-size: 11px;
+}
+.picker-footer button:last-child {
+  color: var(--eidos-background, #fff);
+  background: var(--eidos-foreground, #222);
+  border-color: transparent;
+}
+.picker-footer button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.add-panel #view-label {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+}
+.add-panel #view {
+  width: 100%;
+  max-width: none;
+}

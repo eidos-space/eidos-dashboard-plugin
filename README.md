@@ -3,7 +3,7 @@
 Compose saved Eidos views and ordinary files, including plugin file views, in a `.dashboard` file.
 The file contains JSON layout and relative references; data stays in its source files.
 
-Requires **Eidos Lite 0.22.0 or later** with plugin API 3.2.0.
+Requires **Eidos Lite 0.22.1 or later** with plugin API 3.2.0.
 Install the package or load `plugin.json` as a development source, enable it in
 the Space, then choose **New File → Dashboard**. Add a file and choose a saved
 view for `.eidos` files. Chart 0.3.2 supports a compact embedded presentation.

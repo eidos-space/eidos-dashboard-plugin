@@ -1,6 +1,6 @@
 {
   "name": "eidos-dashboard-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -14,7 +14,9 @@
     "test": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "devDependencies": {
-    "@eidos.space/plugin-sdk": "0.6.0",
-    "@eidos.space/plugin-tools": "0.6.0"
+    "@eidos.space/plugin-sdk": "0.9.0",
+    "@eidos.space/plugin-tools": "0.9.0",
+    "jsdom": "^26.1.0",
+    "esbuild": "0.28.1"
   }
 }

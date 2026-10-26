@@ -17,15 +17,16 @@ import { fileTree } from "./file-picker"
 import { attachLayoutGesture, movedPanels } from "./layout-editor"
 
 export default async function mount(ctx: ViewContext, root: HTMLElement) {
+  const t = ctx.i18n.t
   const file = ctx.capabilities.document,
     resources = ctx.capabilities.ui.resources
   if (!file || ctx.binding.kind !== "file")
-    throw Error("Dashboard requires a configuration file")
-  if (!resources) throw Error("Dashboard requires Eidos Lite plugin API 3.2")
+    throw Error(t("ui.configRequired"))
+  if (!resources) throw Error(t("ui.resourcesRequired"))
   if (!ctx.binding.file.path)
-    throw Error("Dashboard requires a local file path")
+    throw Error(t("ui.pathRequired"))
   const basePath = ctx.binding.file.path!
-  root.innerHTML = `<header class="toolbar"><input class="title" aria-label="Dashboard title"><button id="add">Add panel</button><button id="save">Save</button><button id="undo">Undo</button><button id="redo">Redo</button><span role="status" aria-live="polite"></span></header><form class="add-panel" hidden><label>File<select id="file"><option value="">Choose a file…</option></select></label><label id="view-label" hidden>Saved view<select id="view"></select></label><button type="submit">Add</button><button id="cancel" type="button">Cancel</button><p class="hint">Choose a saved chart or table view, a text file, or an image.</p></form><main class="canvas"><div class="grid"></div><p class="empty">Add a saved view or file to build your dashboard.</p></main><textarea class="recovery" aria-label="Unsaved configuration to recover" hidden readonly></textarea>`
+  root.innerHTML = `<header class="toolbar"><input class="title" aria-label="${t("ui.dashboardTitle")}"><button id="add">${t("ui.addPanel")}</button><button id="save">${t("ui.save")}</button><button id="undo">${t("ui.undo")}</button><button id="redo">${t("ui.redo")}</button><span role="status" aria-live="polite"></span></header><form class="add-panel" hidden><label><span class="file-label">${t("ui.file")}</span><select id="file"><option value="">${t("ui.chooseFile")}</option></select></label><label id="view-label" hidden><span class="view-label">${t("ui.view")}</span><select id="view"></select></label><button type="submit">${t("ui.add")}</button><button id="cancel" type="button">${t("ui.cancel")}</button><p class="hint">${t("ui.pickerHint")}</p></form><main class="canvas"><div class="grid"></div><p class="empty">${t("ui.empty")}</p></main><textarea class="recovery" aria-label="${t("ui.recovery")}" hidden readonly></textarea>`
   const $ = <T extends HTMLElement>(selector: string) =>
     root.querySelector<T>(selector)!
   const grid = $(".grid"),
@@ -36,16 +37,16 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
     viewSelect = $<HTMLSelectElement>("#view")
   const pickerTools = document.createElement("div")
   pickerTools.className = "picker-tools"
-  pickerTools.innerHTML = `<input type="search" aria-label="Search files" placeholder="Search files…">`
+  pickerTools.innerHTML = `<input type="search" aria-label="${t("ui.searchLabel")}" placeholder="${t("ui.searchPlaceholder")}">`
   form.prepend(pickerTools)
   const fileQuery = pickerTools.querySelector("input")!
   const pickerHint = $(".hint")
   form.popover = "auto"
-  form.setAttribute("aria-label", "Add panel")
+  form.setAttribute("aria-label", t("ui.addPanel"))
   const results = document.createElement("div")
   results.className = "picker-results"
   results.setAttribute("role", "tree")
-  results.setAttribute("aria-label", "Files")
+  results.setAttribute("aria-label", t("ui.files"))
   pickerTools.after(results)
   const footer = document.createElement("footer")
   footer.className = "picker-footer"
@@ -122,7 +123,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
         return row
       })
     )
-    pickerHint.textContent = matches.length ? "" : "No matching files"
+    pickerHint.textContent = matches.length ? "" : t("ui.noFiles")
   }
   fileQuery.oninput = renderFiles
   type Card = {
@@ -150,19 +151,23 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
   const report = (cause: unknown) => {
     status.textContent = cause instanceof Error ? cause.message : String(cause)
   }
-  const button = (label: string, action: () => void, description = label) => {
+  type Label = string | { key: string }
+  const labelText = (value: Label) => typeof value === "string" ? value : t(value.key)
+  const button = (label: Label, action: () => void, description: Label = label) => {
     const el = document.createElement("button")
     el.type = "button"
-    el.textContent = label
-    el.title = description
-    el.setAttribute("aria-label", description)
+    el.textContent = labelText(label)
+    el.title = labelText(description)
+    el.setAttribute("aria-label", labelText(description))
+    if (typeof label !== "string") el.dataset.uiText = label.key
+    if (typeof description !== "string") el.dataset.uiDescription = description.key
     el.onclick = action
     return el
   }
-  const editLayout = button("Edit layout", () => {
+  const editLayout = button({ key: "ui.editLayout" }, () => {
     editing = !editing
     root.classList.toggle("editing", editing)
-    editLayout.textContent = editing ? "Done" : "Edit layout"
+    editLayout.textContent = editing ? t("ui.done") : t("ui.editLayout")
     editLayout.setAttribute("aria-pressed", String(editing))
     render()
   })
@@ -175,8 +180,8 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
   for (const method of ["undo", "redo"] as const) {
     const control = $<HTMLButtonElement>(`#${method}`)
     control.className = "icon-button"
-    control.setAttribute("aria-label", method === "undo" ? "Undo" : "Redo")
-    control.title = method === "undo" ? "Undo" : "Redo"
+    control.setAttribute("aria-label", method === "undo" ? t("ui.undo") : t("ui.redo"))
+    control.title = method === "undo" ? t("ui.undo") : t("ui.redo")
     control.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[method]}</svg>`
     $(".toolbar").insertBefore(control, editLayout)
   }
@@ -196,7 +201,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
         const result = await file.edit({
           text,
           expectedVersion: snapshot.version,
-          label: "Edit dashboard",
+          label: t("ui.editDocument"),
         })
         if (result.status === "stale") {
           conflict = true
@@ -204,7 +209,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
           recovery.value = text
           recovery.hidden = false
           throw Error(
-            "The file changed elsewhere. Your proposed configuration is preserved below; reconcile it in the text editor."
+            t("ui.stale")
           )
         }
         accept(result.snapshot)
@@ -310,7 +315,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
         const handle = button(
           "⠿",
           () => {},
-          "Reorder panel: Space, arrow keys, then Enter"
+          { key: "ui.dragHelp" }
         )
         handle.className = "drag"
         bindGesture(handle, panel.id)
@@ -321,7 +326,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
             keyboardTarget = model.panels.findIndex((p) => p.id === panel.id)
             handle.setAttribute("aria-pressed", "true")
             status.textContent =
-              "Use arrows to choose a position, Enter to place, Escape to cancel"
+              t("ui.keyboardHelp")
           } else if (keyboardTarget !== null) {
             if (
               ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"].includes(
@@ -337,7 +342,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
                     (["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1)
                 )
               )
-              status.textContent = `Position ${keyboardTarget + 1}`
+              status.textContent = t("ui.position", { count: keyboardTarget + 1 })
               previewLayout(
                 movedPanels(model.panels, panel.id, keyboardTarget),
                 panel.id
@@ -355,7 +360,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
         }
         const name = document.createElement("input")
         name.className = "panel-title"
-        name.setAttribute("aria-label", "Panel title")
+        name.setAttribute("aria-label", t("ui.panelTitle"))
         name.onchange = () => {
           const value = name.value
           persist((d) => {
@@ -366,7 +371,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
         actions.className = "panel-actions"
         actions.popover = "auto"
         actions.setAttribute("role", "menu")
-        actions.setAttribute("aria-label", "Panel actions")
+        actions.setAttribute("aria-label", t("ui.panelActions"))
         const more = button(
           "⋯",
           () => {
@@ -380,7 +385,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
             actions.showPopover()
             actions.querySelector<HTMLButtonElement>("button")?.focus()
           },
-          "Panel actions"
+          { key: "ui.panelActions" }
         )
         more.className = "panel-more"
         more.setAttribute("aria-expanded", "false")
@@ -422,7 +427,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
         }
         actions.append(
           button(
-            "Open source",
+            { key: "ui.openSource" },
             () => {
               const target = basePath.split("/").slice(0, -1)
               for (const part of panel.source.path.split("/")) {
@@ -433,26 +438,26 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
                 .openFile?.(target.join("/"))
                 .catch(report)
             },
-            "Open source file"
+            { key: "ui.openSourceTitle" }
           ),
           button(
-            "Refresh",
+            { key: "ui.refresh" },
             () => {
               const c = cards.get(panel.id)
               if (!c) return
               if (c.handle) void c.handle.refresh().catch(report)
               else void load(panel, c)
             },
-            "Refresh panel"
+            { key: "ui.refreshPanel" }
           ),
           button(
-            "Remove",
+            { key: "ui.remove" },
             () =>
               persist((d) => {
                 d.panels = d.panels.filter((p) => p.id !== panel.id)
                 arrange(d.panels)
               }),
-            "Remove panel"
+            { key: "ui.removePanel" }
           )
         )
         actions
@@ -464,7 +469,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
           const resize = button(
             "",
             () => {},
-            "Resize panel with arrow keys or drag"
+            { key: "ui.resizeHelp" }
           )
           resize.className = `resize resize-${edge}`
           bindGesture(resize, panel.id, edge)
@@ -528,7 +533,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
     render()
     $("#save").hidden = !state.dirty && !state.conflicted
     status.textContent = state.conflicted
-      ? "File changed on disk; use host recovery"
+      ? t("ui.diskChanged")
       : ""
   }
   const observed = await file.observe((state) => {
@@ -560,7 +565,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
     const result = await file!.save()
     accept(result.snapshot)
     if (result.status === "conflict")
-      report("File changed on disk. Draft retained; use host recovery.")
+      report(t("ui.draftRetained"))
   }
   $("#save").onclick = () => {
     void save().catch(report)
@@ -611,7 +616,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
     views = []
     viewSelect.replaceChildren()
     $("#view-label").hidden = !fileSelect.value
-    $("#view-label").firstChild!.textContent = "View"
+    $("#view-label").firstChild!.textContent = t("ui.view")
     if (fileSelect.value)
       void resources
         .listViews(fileSelect.value)
@@ -628,7 +633,7 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
               )
             )
           addButton.disabled = items.length === 0
-          if (!items.length) pickerHint.textContent = "No available views"
+          if (!items.length) pickerHint.textContent = t("ui.noViews")
         })
         .catch(report)
   }
@@ -637,12 +642,12 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
     if (!path) return
     const view = views[Number(viewSelect.value)]
     if (addButton.disabled || !view) {
-      report("Choose a view")
+      report(t("ui.chooseView"))
       return
     }
     persist((d) => {
       if (d.panels.length >= 12)
-        throw Error("A dashboard supports up to 12 panels")
+        throw Error(t("ui.panelLimit"))
       d.panels.push({
         id: crypto.randomUUID(),
         title: view.kind === "file" ? path.split("/").pop() : view.name,
@@ -712,8 +717,31 @@ export default async function mount(ctx: ViewContext, root: HTMLElement) {
       addSelected()
     }
   }
+  const updateLabels = () => {
+    for (const node of Array.from(root.querySelectorAll<HTMLElement>("[data-ui-text]"))) node.textContent = t(node.dataset.uiText!)
+    for (const node of Array.from(root.querySelectorAll<HTMLElement>("[data-ui-description]"))) {
+      const text = t(node.dataset.uiDescription!)
+      node.title = text; node.setAttribute("aria-label", text)
+    }
+    for (const [selector, key] of [
+      ["#add", "addPanel"], ["#save", "save"], ["#cancel", "cancel"], [".file-label", "file"], [".view-label", "view"], [".empty", "empty"],
+    ]) $(selector!).textContent = t("ui." + key)
+    addButton.textContent = t("ui.add")
+    title.setAttribute("aria-label", t("ui.dashboardTitle"))
+    $(".recovery").setAttribute("aria-label", t("ui.recovery"))
+    fileQuery.placeholder = t("ui.searchPlaceholder"); fileQuery.setAttribute("aria-label", t("ui.searchLabel"))
+    results.setAttribute("aria-label", t("ui.files")); form.setAttribute("aria-label", t("ui.addPanel"))
+    for (const node of Array.from(root.querySelectorAll(".panel-title"))) node.setAttribute("aria-label", t("ui.panelTitle"))
+    for (const node of Array.from(root.querySelectorAll(".panel-actions"))) node.setAttribute("aria-label", t("ui.panelActions"))
+    for (const method of ["undo", "redo"]) { const node = $("#" + method); node.title = t("ui." + method); node.setAttribute("aria-label", node.title) }
+    editLayout.textContent = t(editing ? "ui.done" : "ui.editLayout")
+    if (fileQuery.value || !filePaths.length) renderFiles()
+  }
+  const languageSubscription = ctx.i18n.onDidChangeLocale(updateLabels)
+  updateLabels()
   return {
     dispose() {
+      languageSubscription.dispose()
       for (const card of cards.values()) card.handle?.dispose()
       cards.clear()
       root.replaceChildren()
